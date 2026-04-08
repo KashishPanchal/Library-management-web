@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>City Library | Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Custom scrollbar for better aesthetics */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .book-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .book-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        .modal-overlay {
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-content {
+            transition: transform 0.3s ease;
+        }
+
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border-left-color: #4f46e5;
+            animation: spin 1s ease infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 text-gray-800">
+
+    <!-- Header -->
+    <header class="bg-white shadow-md sticky top-0 z-40">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="#" class="text-2xl font-bold text-indigo-600">
+                <i class="fas fa-book-open-reader mr-2"></i>City Library
+            </a>
+            <div class="hidden md:flex space-x-6">
+                <a href="#register" class="nav-link text-gray-600 hover:text-indigo-600">Register</a>
+                <a href="#login" class="nav-link text-gray-600 hover:text-indigo-600">Login</a>
+                <a href="#home" class="nav-link text-gray-600 hover:text-indigo-600">Home</a>
+                <a href="#books" class="nav-link text-gray-600 hover:text-indigo-600">Books</a>
+                <a href="#contact" class="nav-link text-gray-600 hover:text-indigo-600">Contact</a>
+                <a href="#" id="logout-link" class="nav-link text-gray-600 hover:text-indigo-600 hidden">Logout</a>
+            </div>
+            <div class="md:hidden">
+                <button id="mobile-menu-button" class="text-gray-600 hover:text-indigo-600 focus:outline-none">
+                    <i class="fas fa-bars text-2xl"></i>
+                </button>
+            </div>
+        </nav>
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white">
+            <a href="#register" class="nav-link block px-6 py-3 text-gray-600 hover:bg-indigo-50">Register</a>
+            <a href="#login" class="nav-link block px-6 py-3 text-gray-600 hover:bg-indigo-50">Login</a>
+            <a href="#home" class="nav-link block px-6 py-3 text-gray-600 hover:bg-indigo-50">Home</a>
+            <a href="#books" class="nav-link block px-6 py-3 text-gray-600 hover:bg-indigo-50">Browse Books</a>
+            <a href="#contact" class="nav-link block px-6 py-3 text-gray-600 hover:bg-indigo-50">Contact</a>
+            <a href="#" id="mobile-logout-link"
+                class="nav-link block px-6 py-3 text-gray-600 hover:bg-indigo-50 hidden">Logout</a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-6 py-8">
+        <!-- Home Section -->
+        <section id="home" class="section">
+            <div class="bg-white p-8 rounded-lg shadow-lg text-center">
+                <div class="w-full h-64 bg-cover bg-center rounded-lg mb-6"
+                    style="background-image: url('https://placehold.co/1200x400/667eea/ffffff?text=Welcome+to+City+Library');">
+                </div>
+                <h1 class="text-4xl font-bold text-gray-800 mb-4">Welcome to the City Library Management System</h1>
+                <p class="text-lg text-gray-600 mb-6">Your digital gateway to a world of knowledge. Manage, discover,
+                    and borrow books with ease.</p>
+                <a href="#books"
+                    class="nav-link bg-indigo-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-indigo-700 transition duration-300">Explore
+                    Our Collection</a>
+            </div>
+        </section>
+
+        <!-- Books Section -->
+        <section id="books" class="section">
+            <div class="bg-white p-8 rounded-lg shadow-lg">
+                <h2 class="text-3xl font-bold mb-6 text-gray-800">Book Collection</h2>
+                <!-- Search and Filter -->
+                <div class="flex flex-col md:flex-row justify-between items-center mb-6 space-y-4 md:space-y-0">
+                    <div class="relative w-full md:w-1/3">
+                        <input type="text" id="searchInput"
+                            class="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            placeholder="Search by title or author...">
+                        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <label for="filterSelect" class="font-medium">Filter by:</label>
+                        <select id="filterSelect"
+                            class="border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="all">All</option>
+                            <option value="available">Available</option>
+                            <option value="issued">Issued</option>
+                        </select>
+                        <button id="downloadCsvBtn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                            Download Issued Books CSV
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Book List -->
+                <div id="bookList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Book cards will be injected here by JavaScript -->
+                </div>
+                <div id="noResults" class="hidden text-center py-10">
+                    <i class="fas fa-book text-4xl text-gray-300 mb-4"></i>
+                    <p class="text-gray-500 text-lg">No books found matching your criteria.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Registration Section -->
+        <section id="register" class="section">
+            <div class="bg-white p-8 rounded-lg shadow-lg max-w-md mx-auto">
+                <h2 class="text-3xl font-bold mb-6 text-gray-800 text-center">Create an Account</h2>
+                <form id="registerForm">
+                    <div class="mb-4">
+                        <label for="registerName" class="block text-gray-700 font-medium mb-2">Full Name</label>
+                        <input type="text" id="registerName"
+                            class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="registerEmail" class="block text-gray-700 font-medium mb-2">Gmail</label>
+                        <input type="email" id="registerEmail"
+                            class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="registerMobile" class="block text-gray-700 font-medium mb-2">Mobile Num</label>
+                        <input type="tel" id="registerMobile"
+                            class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="registerPassword" class="block text-gray-700 font-medium mb-2">Password</label>
+                        <input type="password" id="registerPassword"
+                            class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            required>
+                    </div>
+                    <div class="mb-6">
+                        <label for="confirmPassword" class="block text-gray-700 font-medium mb-2">Confirm
+                            Password</label>
+                        <input type="password" id="confirmPassword"
+                            class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            required>
+                    </div>
+                    <div class="text-center">
+                        <button type="submit"
+                            class="w-full bg-indigo-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-indigo-700 transition duration-300">Create</button>
+                    </div>
+                </form>
+                <p class="text-center text-gray-600 mt-4">
+                    Already have an account? <a href="#login" class="nav-link text-indigo-600 hover:underline">Login
+                        here</a>
+                </p>
+            </div>
+        </section>
+
+        <!-- Login Section -->
+        <section id="login" class="section active">
+            <div class="bg-white p-8 rounded-lg shadow-lg max-w-md mx-auto">
+                <h2 class="text-3xl font-bold mb-6 text-gray-800 text-center">Member Login</h2>
+                <form id="loginForm">
+                    <div class="mb-4">
+                        <label for="loginEmail" class="block text-gray-700 font-medium mb-2">Gmail ID</label>
+                        <input type="email" id="loginEmail"
+                            class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            required>
+                    </div>
+                    <div class="mb-6">
+                        <label for="loginPassword" class="block text-gray-700 font-medium mb-2">Password</label>
+                        <input type="password" id="loginPassword"
+                            class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            required>
+                    </div>
+                    <div class="text-center">
+                        <button type="submit"
+                            class="w-full bg-indigo-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-indigo-700 transition duration-300">Login</button>
+                    </div>
+                </form>
+                <p class="text-center text-gray-600 mt-4">
+                    Don't have an account? <a href="#register" class="nav-link text-indigo-600 hover:underline">Register
+                        here</a>
+                </p>
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section id="contact" class="section">
+            <div class="bg-white p-8 rounded-lg shadow-lg">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                        <h2 class="text-3xl font-bold mb-4 text-gray-800">Contact Us</h2>
+                        <p class="text-gray-600 mb-6">Have questions? We love to hear from you. Reach out to us through
+                            any of the methods below.</p>
+                        <div class="space-y-4">
+                            <p class="flex items-center text-gray-700"><i
+                                    class="fas fa-map-marker-alt w-6 mr-2 text-indigo-600"></i>Maruti Raw House,
+                                Opposite of Dinner bell hotel.</p>
+                            <p class="flex items-center text-gray-700"><i
+                                    class="fas fa-phone w-6 mr-2 text-indigo-600"></i>+91 8460870899</p>
+                            <p class="flex items-center text-gray-700"><i
+                                    class="fas fa-envelope w-6 mr-2 text-indigo-600"></i>kishupanchal6@gmail.com</p>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="text-2xl font-bold mb-4 text-gray-800">Opening Hours</h3>
+                        <ul class="text-gray-600 space-y-2">
+                            <li><strong>Monday - Friday:</strong> 9:00 AM - 8:00 PM</li>
+                            <li><strong>Saturday:</strong> 10:00 AM - 6:00 PM</li>
+                            <li><strong>Sunday:</strong> Closed</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Book Details Modal -->
+    <div id="bookModal"
+        class="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden opacity-0">
+        <div id="modalContent"
+            class="modal-content bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 relative transform scale-95">
+            <button id="closeModalBtn"
+                class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
+            <div id="modalBody">
+                <!-- Content will be injected by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white mt-8 py-6 shadow-inner">
+        <div class="container mx-auto px-6 text-center text-gray-600">
+            <p>&copy; <span id="currentYear"></span> City Library. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Custom Toast Notification -->
+    <div id="toast"
+        class="fixed bottom-5 right-5 bg-green-500 text-white py-2 px-4 rounded-lg shadow-lg opacity-0 translate-y-10 transition-all duration-300 z-50">
+        <span id="toastMessage"></span>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- STATE MANAGEMENT ---
+            let books = [
+                { id: 1, title: 'zero to one ', author: 'Blake Masters', genre: 'Mind', status: 'available', cover: 'https://m.media-amazon.com/images/I/61PDzIhVLnL._UF1000,1000_QL80_.jpg', issuedDate: null },
+                { id: 2, title: 'power of subconscious mind', author: 'Dr. Joseph Murphy', genre: 'Mind', status: 'issued', cover: 'https://m.media-amazon.com/images/I/81gTwYAhU7L.jpg', issuedDate: new Date().toISOString() },
+                { id: 3, title: '1984', author: 'George Orwell', genre: 'Dystopian', status: 'available', cover: 'https://m.media-amazon.com/images/I/41qUUoeLrOS._SL500_.jpg', issuedDate: null },
+                { id: 4, title: 'Mindset', author: 'Carol Dweck', genre: 'Mind', status: 'available', cover: 'https://m.media-amazon.com/images/I/61FXPFVKD6L.jpg', issuedDate: null },
+                { id: 5, title: 'The Catcher in the Rye', author: 'J.D. Salinger', genre: 'Classic', status: 'issued', cover: 'https://m.media-amazon.com/images/I/7108sdEUEGL._UF1000,1000_QL80_.jpg', issuedDate: new Date().toISOString() },
+                { id: 6, title: 'The 48 laws of power', author: 'Robert Greene', genre: 'Power', status: 'available', cover: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSbA4NBdsNvLrNkABlMQPqUceL7AUcFvK0U9Q&s', issuedDate: null },
+                { id: 7, title: 'Rich Dad Poor Dad', author: 'Robert Kiyosaki', genre: 'money', status: 'available', cover: 'https://cdn.penguin.co.in/wp-content/uploads/2023/12/9781612681139-1-scaled.jpg', issuedDate: null },
+                { id: 8, title: 'Ikigai', author: 'Francesc Miralles', genre: 'Life', status: 'available', cover: 'https://m.media-amazon.com/images/I/81l3rZK4lnL.jpg', issuedDate: null },
+                { id: 9, title: 'Atomic Habits', author: 'James Clear', genre: 'Habits', status: 'available', cover: 'https://www.bookishadda.com/cdn/shop/files/230_f298f5c0-c116-4280-bef6-5d00db25b743.png?v=1701690525&width=1920', issuedDate: null },
+                { id: 10, title: 'The Art of Letting Go', author: 'Nick Trenton', genre: 'Relation', status: 'available', cover: 'https://online.fliphtml5.com/fzqli/igww/files/large/d473ea14297af39756f955181bdf9b7a.webp?1739772152&1739772152', issuedDate: null },
+                { id: 11, title: 'Too good to be true', author: 'Prajakta koli', genre: 'Romance', status: 'available', cover: 'https://m.media-amazon.com/images/I/818vo2TWp+L._UF1000,1000_QL80_.jpg', issuedDate: null },
+                { id: 12, title: 'Twisted Love', author: 'Ana Huang', genre: 'Romance', status: 'available', cover: 'https://m.media-amazon.com/images/I/71YJet75sxL.jpg', issuedDate: null },
+                { id: 13, title: 'I do not love you anymore', author: 'Rithvik Singh', genre: 'Romance', status: 'available', cover: 'https://imgv2-2-f.scribdassets.com/img/document/775734698/original/8146320ee9/1?v=1', issuedDate: null },
+                { id: 14, title: 'Conversation with GOD', author: 'Matthew Robert Payne', genre: 'spiritual', status: 'available', cover: 'https://m.media-amazon.com/images/I/71jZobN0AnL._UF1000,1000_QL80_.jpg', issuedDate: null },
+                { id: 15, title: 'Cinderella', author: 'Charles Perrult', genre: 'Fantasy', status: 'available', cover: 'https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1451312740i/28373551.jpg', issuedDate: null },
+                { id: 16, title: 'beauty And The Beast', author: 'Gabrielle-Suzanne Barbot de Villeneuve', genre: 'Fantasy', status: 'issued', cover: 'https://images.penguinrandomhouse.com/cover/9780736435758', issuedDate: new Date().toISOString() },
+                { id: 19, title: 'Snow White', author: 'Brothers Grimm', genre: 'Fantasy', status: 'available', cover: 'https://m.media-amazon.com/images/I/91c1zgxLHmL._UF1000,1000_QL80_.jpg', issuedDate: null },
+                { id: 17, title: 'Sleeping Beauty', author: 'Charles Perrault', genre: 'Fantasy', status: 'available', cover: 'https://m.media-amazon.com/images/I/710um174djL._UF1000,1000_QL80_.jpg', issuedDate: null },
+                { id: 18, title: 'My Fault', author: 'Mercedes Ron', genre: 'Fantasy', status: 'available', cover: 'https://i.ytimg.com/vi/CHkSXqKYElo/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLCtStBQgmIYTtTrvogmIUVnyPMFqw', issuedDate: null },
+                { id: 20, title: 'Maleficent', author: 'Brothers Grimm', genre: 'Fantasy', status: 'available', cover: 'https://m.media-amazon.com/images/I/71tfNW4dysL._UF1000,1000_QL80_.jpg', issuedDate: null },
+
+            ];
+            let isLoggedIn = false;
+
+            // --- DOM ELEMENTS ---
+            const bookList = document.getElementById('bookList');
+            const searchInput = document.getElementById('searchInput');
+            const filterSelect = document.getElementById('filterSelect');
+            const sections = document.querySelectorAll('.section');
+            const navLinks = document.querySelectorAll('.nav-link');
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const noResults = document.getElementById('noResults');
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            const bookModal = document.getElementById('bookModal');
+            const modalContent = document.getElementById('modalContent');
+            const modalBody = document.getElementById('modalBody');
+            const closeModalBtn = document.getElementById('closeModalBtn');
+            const registerForm = document.getElementById('registerForm');
+            const loginForm = document.getElementById('loginForm');
+            const logoutLink = document.getElementById('logout-link');
+            const mobileLogoutLink = document.getElementById('mobile-logout-link');
+            const downloadCsvBtn = document.getElementById('downloadCsvBtn');
+
+            // --- GEMINI API HELPER ---
+            const callGeminiAPI = async (prompt, retries = 3, delay = 1000) => {
+                const apiKey = ""; // Canvas will provide this
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+                const payload = { contents: [{ parts: [{ text: prompt }] }] };
+
+                for (let i = 0; i < retries; i++) {
+                    try {
+                        const response = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+
+                        const result = await response.json();
+                        const candidate = result.candidates?.[0];
+                        if (candidate && candidate.content?.parts?.[0]?.text) {
+                            return candidate.content.parts[0].text;
+                        } else {
+                            throw new Error("Invalid response structure from Gemini API");
+                        }
+                    } catch (error) {
+                        console.error(`API call attempt ${i + 1} failed:`, error);
+                        if (i === retries - 1) {
+                            showToast('Failed to get response from AI. Please try again.', 'error');
+                            return null;
+                        }
+                        await new Promise(res => setTimeout(res, delay * Math.pow(2, i))); // Exponential backoff
+                    }
+                }
+            };
+
+            // --- RENDER FUNCTION ---
+            const renderBooks = () => {
+                bookList.innerHTML = '';
+                const searchTerm = searchInput.value.toLowerCase();
+                const filterValue = filterSelect.value;
+
+                const filteredBooks = books.filter(book => {
+                    const matchesSearch = book.title.toLowerCase().includes(searchTerm) || book.author.toLowerCase().includes(searchTerm);
+                    const matchesFilter = filterValue === 'all' || book.status === filterValue;
+                    return matchesSearch && matchesFilter;
+                });
+
+                if (filteredBooks.length === 0) {
+                    noResults.style.display = 'block';
+                } else {
+                    noResults.style.display = 'none';
+                }
+
+                filteredBooks.forEach(book => {
+                    const isAvailable = book.status === 'available';
+                    const card = document.createElement('div');
+                    card.className = 'book-card bg-gray-50 border rounded-lg p-4 flex flex-col';
+                    card.innerHTML = `
+                        <img src="${book.cover}" alt="${book.title}" class="w-full h-64 object-cover rounded-md mb-4" onerror="this.onerror=null;this.src='https://placehold.co/300x450/e2e8f0/64748b?text=No+Image';">
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">${book.title}</h3>
+                        <p class="text-gray-600 mb-1">by ${book.author}</p>
+                        <p class="text-sm text-gray-500 mb-4">${book.genre}</p>
+                        <div class="mt-auto pt-4 border-t border-gray-200 flex justify-between items-center">
+                             <button class="details-btn text-indigo-600 hover:text-indigo-800 text-sm font-semibold py-2 px-4 rounded-lg transition duration-300" data-id="${book.id}">Details</button>
+                             <span class="px-3 py-1 text-sm font-semibold rounded-full ${isAvailable ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
+                                ${isAvailable ? 'Available' : 'Issued'}
+                            </span>
+                        </div>
+                    `;
+                    bookList.appendChild(card);
+                });
+            };
+
+            // --- MODAL FUNCTIONS ---
+            const showModal = (book) => {
+                modalBody.innerHTML = `
+                    <div class="flex flex-col md:flex-row gap-6">
+                        <div class="md:w-1/3">
+                            <img src="${book.cover}" alt="${book.title}" class="w-full h-auto object-cover rounded-lg shadow-md" onerror="this.onerror=null;this.src='https://placehold.co/300x450/e2e8f0/64748b?text=No+Image';">
+                        </div>
+                        <div class="md:w-2/3">
+                            <h2 class="text-3xl font-bold text-gray-800 mb-2">${book.title}</h2>
+                            <p class="text-gray-600 mb-2">by ${book.author}</p>
+                            <p class="text-sm text-gray-500 mb-4">${book.genre}</p>
+                            <button class="action-btn-modal ${book.status === 'available' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-gray-600 hover:bg-gray-700'} text-white font-semibold px-4 py-2 rounded-lg transition duration-300 mb-6" data-id="${book.id}">
+                                ${book.status === 'available' ? 'Issue Book' : 'Return Book'}
+                            </button>
+                            <div class="border-t pt-4">
+                                <button id="aiSummaryBtn" class="w-full bg-teal-500 text-white font-semibold px-4 py-2 rounded-lg hover:bg-teal-600 transition duration-300 flex items-center justify-center">
+                                    <span id="aiSummaryBtnText">✨ Get AI Summary & Suggestions</span>
+                                    <div id="aiSummarySpinner" class="spinner hidden ml-2"></div>
+                                </button>
+                                <div id="aiSummaryContent" class="mt-4 text-gray-600 space-y-4 prose max-w-none"></div>
+                            </div>
+                        </div>
+                    </div>
+                 `;
+                bookModal.classList.remove('hidden');
+                setTimeout(() => {
+                    bookModal.classList.remove('opacity-0');
+                    modalContent.classList.remove('scale-95');
+                }, 10);
+            };
+
+            const hideModal = () => {
+                bookModal.classList.add('opacity-0');
+                modalContent.classList.add('scale-95');
+                setTimeout(() => {
+                    bookModal.classList.add('hidden');
+                    modalBody.innerHTML = '';
+                }, 300);
+            };
+
+            // --- NAVIGATION ---
+            const showSection = (hash) => {
+                const protectedPages = ['#home', '#books', '#contact'];
+                if (protectedPages.includes(hash) && !isLoggedIn) {
+                    showToast('You must be logged in to view this page.', 'error');
+                    window.location.hash = '#login';
+                    // Since hashchange will re-trigger, we need to show the login section manually here
+                    // or the old section will remain visible until the hashchange event fires.
+                    sections.forEach(s => s.classList.remove('active'));
+                    document.getElementById('login').classList.add('active');
+                    return;
+                }
+
+                sections.forEach(section => {
+                    if (`#${section.id}` === hash) {
+                        section.classList.add('active');
+                    } else {
+                        section.classList.remove('active');
+                    }
+                });
+                mobileMenu.classList.add('hidden'); // Hide mobile menu on navigation
+            };
+
+            navLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const hash = new URL(link.href).hash;
+                    window.location.hash = hash;
+                });
+            });
+
+            // Initial page load
+            showSection(window.location.hash || '#login');
+
+            window.addEventListener('hashchange', () => {
+                const hash = window.location.hash || '#login';
+                showSection(hash);
+            });
+
+            // --- DOWNLOAD CSV FUNCTIONALITY ---
+            const downloadIssuedBooksCSV = () => {
+                const issuedBooks = books.filter(book => book.status === 'issued');
+
+                if (issuedBooks.length === 0) {
+                    showToast('No issued books to export.', 'error');
+                    return;
+                }
+
+                const headers = ['ID', 'Title', 'Author', 'Genre', 'IssuedDate'];
+                const csvContent = [
+                    headers.join(','),
+                    ...issuedBooks.map(book => [book.id, book.title, book.author, book.genre, book.issuedDate].join(','))
+                ].join('\n');
+
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                if (link.href) {
+                    URL.revokeObjectURL(link.href);
+                }
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', 'issued_books.csv');
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                showToast('Issued books CSV downloaded.', 'success');
+            };
+
+            // --- EVENT LISTENERS ---
+            searchInput.addEventListener('input', renderBooks);
+            filterSelect.addEventListener('change', renderBooks);
+            downloadCsvBtn.addEventListener('click', downloadIssuedBooksCSV);
+
+            // Event delegation for various buttons
+            document.body.addEventListener('click', async (e) => {
+                // Book details modal button
+                if (e.target.classList.contains('details-btn')) {
+                    const bookId = parseInt(e.target.dataset.id);
+                    const book = books.find(b => b.id === bookId);
+                    if (book) showModal(book);
+                }
+
+                // Issue/Return button inside modal
+                if (e.target.classList.contains('action-btn-modal')) {
+                    const bookId = parseInt(e.target.dataset.id);
+                    const book = books.find(b => b.id === bookId);
+                    if (book) {
+                        if (book.status === 'available') {
+                            book.status = 'issued';
+                            book.issuedDate = new Date().toISOString();
+                        } else {
+                            book.status = 'available';
+                            book.issuedDate = null; // Clear issued date on return
+                        }
+                        const message = `"${book.title}" has been ${book.status === 'issued' ? 'issued' : 'returned'}.`;
+                        showToast(message, 'success');
+                        hideModal();
+                        renderBooks();
+                    }
+                }
+
+                // AI Summary button
+                if (e.target.id === 'aiSummaryBtn' || e.target.parentElement.id === 'aiSummaryBtn') {
+                    const btn = document.getElementById('aiSummaryBtn');
+                    const btnText = document.getElementById('aiSummaryBtnText');
+                    const spinner = document.getElementById('aiSummarySpinner');
+                    const contentDiv = document.getElementById('aiSummaryContent');
+
+                    const bookTitle = modalBody.querySelector('h2').textContent;
+                    const bookAuthor = modalBody.querySelector('p').textContent.replace('by ', '');
+
+                    btn.disabled = true;
+                    btnText.textContent = 'Generating...';
+                    spinner.classList.remove('hidden');
+
+                    const prompt = `Provide a concise, one-paragraph summary for the book "${bookTitle}" by ${bookAuthor}. After the summary, add a heading "Read-Alike Suggestions" and list three similar books with their authors. Format the suggestions as a bulleted list.`;
+                    const result = await callGeminiAPI(prompt);
+
+                    if (result) {
+                        contentDiv.innerHTML = result.replace(/\n\n/g, '<br>').replace(/\n/g, '<br>').replace(/\* /g, '<br>&bull; ');
+                    } else {
+                        contentDiv.innerHTML = `<p class="text-red-500">Could not generate summary. Please try again later.</p>`;
+                    }
+
+                    btn.disabled = false;
+                    spinner.classList.add('hidden');
+                    btnText.textContent = '✨ Get AI Summary & Suggestions';
+                }
+            });
+
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+
+            registerForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const name = document.getElementById('registerName').value;
+                const email = document.getElementById('registerEmail').value;
+                const mobile = document.getElementById('registerMobile').value;
+                const password = document.getElementById('registerPassword').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+
+                // Gmail validation
+                const gmailRegex = /^[a-zA-Z0-9.]+@gmail\.com$/;
+                if (!gmailRegex.test(email)) {
+                    showToast('Please enter a valid Gmail address.', 'error');
+                    return;
+                }
+
+                // Mobile number validation (simple 10-digit check)
+                const mobileRegex = /^\d{10}$/;
+                if (!mobileRegex.test(mobile)) {
+                    showToast('Please enter a valid 10-digit mobile number.', 'error');
+                    return;
+                }
+
+                // Password length validation
+                if (password.length < 6 || password.length > 10) {
+                    showToast('Password must be between 6 and 10 characters.', 'error');
+                    return;
+                }
+
+                // Password uniqueness (simple check for this example)
+                const passwordUniquenessRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,10}$/;
+                if (!passwordUniquenessRegex.test(password)) {
+                    showToast('Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.', 'error');
+                    return;
+                }
+
+                // Password confirmation
+                if (password !== confirmPassword) {
+                    showToast('Passwords do not match!', 'error');
+                    return;
+                }
+
+                // In a real application, you would handle user registration here
+                showToast(`Welcome, ${name}! Your account has been created.`, 'success');
+                registerForm.reset();
+                window.location.hash = '#login';
+            });
+
+            const logout = () => {
+                isLoggedIn = false;
+                showToast('You have been logged out.', 'success');
+                updateNavLinks();
+                window.location.hash = '#register';
+            };
+
+            logoutLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                logout();
+            });
+
+            mobileLogoutLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                logout();
+            });
+
+            loginForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                // In a real application, you would validate credentials here
+                isLoggedIn = true;
+                showToast('Login successful! Welcome back.', 'success');
+                loginForm.reset();
+                updateNavLinks();
+                window.location.hash = '#books';
+            });
+
+            closeModalBtn.addEventListener('click', hideModal);
+            bookModal.addEventListener('click', (e) => {
+                if (e.target === bookModal) hideModal();
+            });
+
+            // --- UTILITY FUNCTIONS ---
+
+            // Update Nav Links
+            const updateNavLinks = () => {
+                const registerLoginLinks = document.querySelectorAll('a[href="#register"], a[href="#login"]');
+                if (isLoggedIn) {
+                    registerLoginLinks.forEach(link => link.style.display = 'none');
+                    logoutLink.style.display = 'block';
+                    mobileLogoutLink.style.display = 'block';
+                } else {
+                    registerLoginLinks.forEach(link => link.style.display = 'block');
+                    logoutLink.style.display = 'none';
+                    mobileLogoutLink.style.display = 'none';
+                }
+            };
+
+            // Toast Notification
+            function showToast(message, type = 'success') {
+                toastMessage.textContent = message;
+                toast.className = `fixed bottom-5 right-5 text-white py-2 px-4 rounded-lg shadow-lg transition-all duration-300 z-50 ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
+                toast.classList.remove('opacity-0', 'translate-y-10');
+
+                setTimeout(() => {
+                    toast.classList.add('opacity-0', 'translate-y-10');
+                }, 3000);
+            }
+
+            // Set current year in footer
+            document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+            // --- INITIAL RENDER ---
+            renderBooks();
+            updateNavLinks();
+        });
+    </script>
+</body>
+
+</html>
